@@ -64,8 +64,6 @@ object OddOccurrenceNumber {
    */
   def findOddOccurrencesDF(dataFrame: DataFrame, spark: SparkSession): DataFrame = {
     dataFrame
-      .withColumn("key", col("key").cast(IntegerType))
-      .withColumn("value", col("value").cast(IntegerType))
       .groupBy("key", "value")
       .count()
       .where((col("count") % 2) =!= 0)
