@@ -8,7 +8,7 @@ import org.apache.spark.sql.types.IntegerType
 
 /**
   * Use this to test the app locally, from sbt:
-  * sbt "run inputPath.txt outputPath.txt aws_profile"
+  * sbt "run input_path output_path aws_profile"
   *  (+ select OddOccurrenceNumberLocalApp when prompted)
   */
 object OddOccurrenceNumberLocalApp extends App {
