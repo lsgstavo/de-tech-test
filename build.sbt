@@ -9,7 +9,7 @@ lazy val root = (project in file(".")).
       organization := "io.lgos",
       scalaVersion := "2.13.10"
     )),
-    name := "du-data-engineer-challenge",
+    name := "du-odd-occurrence-finder",
     version := "0.0.1",
 
     sparkVersion := "3.3.0",

@@ -1,4 +1,4 @@
-package io.lgos.challenge
+package io.lgos
 
 import com.holdenkarau.spark.testing.{DataFrameSuiteBase, RDDComparisons, SharedSparkContext}
 import org.apache.spark.rdd.RDD

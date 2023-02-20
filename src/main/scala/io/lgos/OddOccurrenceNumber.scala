@@ -1,4 +1,4 @@
-package io.lgos.challenge
+package io.lgos
 
 import org.apache.spark.rdd._
 import org.apache.spark.sql.functions.col

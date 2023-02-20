@@ -1,4 +1,4 @@
-package io.lgos.challenge
+package io.lgos
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import org.apache.spark.SparkConf

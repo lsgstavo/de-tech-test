@@ -1,4 +1,4 @@
-# Data engineer Tech Test
+# Odd occurrence finder
 
 To run the app locally, use the following sbt command:
 ```
