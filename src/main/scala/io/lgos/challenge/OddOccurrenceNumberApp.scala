@@ -3,45 +3,52 @@ package io.lgos.challenge
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.col
 
 /**
   * Use this to test the app locally, from sbt:
-  * sbt "run inputPath.txt outputPath.txt"
+  * sbt "run inputPath.txt outputPath.txt aws_profile"
   *  (+ select OddOccurrenceNumberLocalApp when prompted)
   */
 object OddOccurrenceNumberLocalApp extends App {
-  private val (inputPath, outputPath, profile) = (args(0), args(1), args(2))
+  private val (inputPath, outputPath, profile, alg) = (args(0), args(1), args(2), args.lift(3))
+
   val conf = new SparkConf()
     .setMaster("local")
     .setAppName("Odd occurrence")
 
-  Runner.run(conf, inputPath, outputPath, profile)
+  Runner.run(conf, inputPath, outputPath, profile, alg)
 }
 
 /**
   * Use this when submitting the app to a cluster with spark-submit
-  * */
+  */
 object OddOccurrenceNumberApp extends App {
-  val (inputPath, outputPath, profile) = (args(0), args(1), args(2))
+  val (inputPath, outputPath, profile, alg) = (args(0), args(1), args(2), args.lift(3))
 
   // spark-submit command should supply all necessary config elements
-  Runner.run(new SparkConf(), inputPath, outputPath, profile)
+  Runner.run(new SparkConf(), inputPath, outputPath, profile, alg)
 }
 
 object Runner {
-  def run(conf: SparkConf, inputPath: String, outputPath: String, profile: String): Unit = {
+
+  def run(
+    conf: SparkConf,
+    inputPath: String,
+    outputPath: String,
+    profile: String,
+    algorithm: Option[String]
+  ): Unit = {
     val spark = SparkSession
       .builder()
       .config(conf)
       .getOrCreate()
-
+    import spark.implicits._
     val provider = new ProfileCredentialsProvider(profile)
 
-    spark.sparkContext
-      .hadoopConfiguration.set("fs.s3a.access.key", provider.getCredentials.getAWSAccessKeyId)
+    spark.sparkContext.hadoopConfiguration.set("fs.s3a.access.key", provider.getCredentials.getAWSAccessKeyId)
 
-    spark.sparkContext
-      .hadoopConfiguration.set("fs.s3a.secret.key", provider.getCredentials.getAWSSecretKey)
+    spark.sparkContext.hadoopConfiguration.set("fs.s3a.secret.key", provider.getCredentials.getAWSSecretKey)
 
     val csv = spark.read
       .option("header", value = true)
@@ -57,15 +64,24 @@ object Runner {
       .withColumnRenamed(tsv.columns(0), "key")
       .withColumnRenamed(tsv.columns(1), "value")
       .union(
-        csv.withColumnRenamed(csv.columns(0), "key")
+        csv
+          .withColumnRenamed(csv.columns(0), "key")
           .withColumnRenamed(csv.columns(1), "value")
       )
+    val rdd = keyValuePairs.select(col("key").as[Int], col("value").as[Int]).rdd
 
-//    val rdd = keyValuePairs.select(col("key").as[Int], col("value").as[Int]).rdd
+    val result = algorithm match {
+      case Some("V1") =>
+        OddOccurrenceNumber.findOddOccurrences(rdd).toDF("key", "value")
+      case Some("V1-DF") =>
+        OddOccurrenceNumber.findOddOccurrencesDF(keyValuePairs, spark)
+      case Some("V2") =>
+        OddOccurrenceNumber.findOddOccurrencesV2(rdd).toDF("key", "value")
+    }
 
-    val result = OddOccurrenceNumber.findOddOccurrencesDF(keyValuePairs, spark)
     result.write
       .option("sep", "\t")
       .csv(s"$outputPath/result.tsv")
   }
+
 }
